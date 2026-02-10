@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>フォントプレビューツール</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .controls {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .tab-button:hover:not(.active) {
+            background: #f0f0f0;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-button {
+            display: block;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .file-input-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .file-name {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #666;
+            font-style: italic;
+        }
+
+        select,
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        select:focus,
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .slider-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .slider-container {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .slider-value {
+            display: inline-block;
+            margin-left: 10px;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .font-list {
+            padding: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .font-item {
+            padding: 20px;
+            margin-bottom: 15px;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .font-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+        }
+
+        .font-name {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .font-preview {
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .search-box {
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .slider-group {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .controls {
+                padding: 20px;
+            }
+
+            .tab-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔤 フォントプレビューツール</h1>
+            <p>システムフォントを自動検出 / カスタムフォントのアップロード</p>
+        </div>
+
+        <div class="controls">
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="switchTab('installed')">
+                    💻 インストール済みフォント
+                </button>
+                <button class="tab-button" onclick="switchTab('upload')">
+                    📁 フォントファイルをアップロード
+                </button>
+            </div>
+
+            <div id="installedTab" class="tab-content active">
+                <div class="control-group">
+                    <label>表示する文字列</label>
+                    <textarea 
+                        id="textInput1" 
+                        placeholder="ここに表示したい文字を入力してください..."
+                        oninput="updateInstalledFonts()"
+                    >The quick brown fox jumps over the lazy dog
+あのイーハトーヴォのすきとおった風</textarea>
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-container">
+                        <label>
+                            フォントサイズ
+                            <span class="slider-value" id="fontSizeValue1">32px</span>
+                        </label>
+                        <input type="range" id="fontSize1" min="12" max="72" value="32" oninput="updateInstalledFonts()">
+                    </div>
+
+                    <div class="slider-container">
+                        <label>
+                            行間
+                            <span class="slider-value" id="lineHeightValue1">1.5</span>
+                        </label>
+                        <input type="range" id="lineHeight1" min="0.8" max="3" step="0.1" value="1.5" oninput="updateInstalledFonts()">
+                    </div>
+                </div>
+
+                <div class="search-box">
+                    <input type="text" id="fontSearch" placeholder="🔍 フォント名で検索..." oninput="filterFonts()">
+                </div>
+            </div>
+
+            <div id="uploadTab" class="tab-content">
+                <div class="control-group">
+                    <label>フォントファイル (.ttf, .otf, .woff, .woff2)</label>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="fontFile" accept=".ttf,.otf,.woff,.woff2">
+                        <div class="file-input-button">
+                            📁 フォントファイルを選択
+                        </div>
+                    </div>
+                    <div class="file-name" id="fileName">ファイルが選択されていません</div>
+                </div>
+
+                <div class="control-group">
+                    <label>表示する文字列</label>
+                    <textarea 
+                        id="textInput2" 
+                        placeholder="ここに表示したい文字を入力してください..."
+                    >The quick brown fox jumps over the lazy dog
+あのイーハトーヴォのすきとおった風</textarea>
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-container">
+                        <label>
+                            フォントサイズ
+                            <span class="slider-value" id="fontSizeValue2">48px</span>
+                        </label>
+                        <input type="range" id="fontSize2" min="12" max="120" value="48">
+                    </div>
+
+                    <div class="slider-container">
+                        <label>
+                            行間
+                            <span class="slider-value" id="lineHeightValue2">1.5</span>
+                        </label>
+                        <input type="range" id="lineHeight2" min="0.8" max="3" step="0.1" value="1.5">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="font-list" id="fontList">
+            <div class="loading">フォント一覧を読み込んでいます...</div>
+        </div>
+
+        <div class="font-list" id="uploadPreview" style="display: none;">
+            <div class="font-item">
+                <div class="font-name" id="uploadFontName">カスタムフォント</div>
+                <div class="font-preview" id="previewText"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allFonts = [];
+        let currentFont = null;
+
+        // タブ切り替え
+        function switchTab(tab) {
+            const buttons = document.querySelectorAll('.tab-button');
+            const contents = document.querySelectorAll('.tab-content');
+            
+            buttons.forEach(btn => btn.classList.remove('active'));
+            contents.forEach(content => content.classList.remove('active'));
+            
+            if (tab === 'installed') {
+                buttons[0].classList.add('active');
+                document.getElementById('installedTab').classList.add('active');
+                document.getElementById('fontList').style.display = 'block';
+                document.getElementById('uploadPreview').style.display = 'none';
+                loadInstalledFonts();
+            } else {
+                buttons[1].classList.add('active');
+                document.getElementById('uploadTab').classList.add('active');
+                document.getElementById('fontList').style.display = 'none';
+                document.getElementById('uploadPreview').style.display = 'block';
+            }
+        }
+
+        // インストール済みフォントの読み込み
+        async function loadInstalledFonts() {
+            const fontList = document.getElementById('fontList');
+            
+            // Local Font Access APIが使用可能かチェック
+            if ('queryLocalFonts' in window) {
+                try {
+                    fontList.innerHTML = '<div class="loading">フォント一覧を読み込んでいます...<br>初回アクセス時は許可が必要です</div>';
+                    
+                    // フォントアクセスの許可を要求
+                    const availableFonts = await window.queryLocalFonts();
+                    
+                    // フォント名を取得（重複を除く）
+                    const fontNames = new Set();
+                    availableFonts.forEach(font => {
+                        // familyプロパティを使用
+                        if (font.family) {
+                            fontNames.add(font.family);
+                        }
+                    });
+                    
+                    allFonts = Array.from(fontNames).sort();
+                    
+                    if (allFonts.length === 0) {
+                        fontList.innerHTML = '<div class="loading">フォントが見つかりませんでした</div>';
+                    } else {
+                        displayFonts(allFonts);
+                    }
+                } catch (error) {
+                    if (error.name === 'NotAllowedError') {
+                        fontList.innerHTML = '<div class="loading">フォントアクセスが拒否されました。<br>ブラウザの設定から許可してください。</div>';
+                    } else {
+                        fontList.innerHTML = '<div class="loading">フォントの読み込みに失敗しました: ' + error.message + '</div>';
+                    }
+                }
+            } else {
+                // Local Font Access APIが使えない場合はフォールバック
+                fontList.innerHTML = '<div class="loading">このブラウザはLocal Font Access APIに対応していません。<br>Chrome/Edge 103以降をお使いください。<br><br>または、「フォントファイルをアップロード」タブからフォントを読み込んでください。</div>';
+            }
+        }
+
+        // フォント一覧の表示
+        function displayFonts(fonts) {
+            const fontList = document.getElementById('fontList');
+            const text = document.getElementById('textInput1').value || 'The quick brown fox jumps over the lazy dog';
+            const fontSize = document.getElementById('fontSize1').value;
+            const lineHeight = document.getElementById('lineHeight1').value;
+            
+            if (fonts.length === 0) {
+                fontList.innerHTML = '<div class="loading">フォントが見つかりませんでした</div>';
+                return;
+            }
+
+            fontList.innerHTML = fonts.map(font => `
+                <div class="font-item">
+                    <div class="font-name">${font}</div>
+                    <div class="font-preview" style="font-family: '${font}'; font-size: ${fontSize}px; line-height: ${lineHeight};">
+                        ${text}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // フォント検索
+        function filterFonts() {
+            const searchTerm = document.getElementById('fontSearch').value.toLowerCase();
+            const filteredFonts = allFonts.filter(font => 
+                font.toLowerCase().includes(searchTerm)
+            );
+            displayFonts(filteredFonts);
+        }
+
+        // インストール済みフォントの更新
+        function updateInstalledFonts() {
+            const fontSize1 = document.getElementById('fontSize1');
+            const lineHeight1 = document.getElementById('lineHeight1');
+            document.getElementById('fontSizeValue1').textContent = fontSize1.value + 'px';
+            document.getElementById('lineHeightValue1').textContent = lineHeight1.value;
+            
+            if (allFonts.length > 0) {
+                displayFonts(allFonts);
+            }
+        }
+
+        // アップロードフォントの処理
+        const fontFileInput = document.getElementById('fontFile');
+        const textInput2 = document.getElementById('textInput2');
+        const fontSize2 = document.getElementById('fontSize2');
+        const lineHeight2 = document.getElementById('lineHeight2');
+        const previewText = document.getElementById('previewText');
+        const fileName = document.getElementById('fileName');
+        const uploadFontName = document.getElementById('uploadFontName');
+
+        fontFileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            fileName.textContent = file.name;
+            uploadFontName.textContent = file.name;
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const fontData = event.target.result;
+                const fontName = 'CustomFont_' + Date.now();
+                
+                try {
+                    const fontFace = new FontFace(fontName, fontData);
+                    await fontFace.load();
+                    document.fonts.add(fontFace);
+                    currentFont = fontName;
+                    updateUploadPreview();
+                } catch (error) {
+                    alert('フォントの読み込みに失敗しました: ' + error.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        textInput2.addEventListener('input', updateUploadPreview);
+        fontSize2.addEventListener('input', (e) => {
+            document.getElementById('fontSizeValue2').textContent = e.target.value + 'px';
+            updateUploadPreview();
+        });
+        lineHeight2.addEventListener('input', (e) => {
+            document.getElementById('lineHeightValue2').textContent = e.target.value;
+            updateUploadPreview();
+        });
+
+        function updateUploadPreview() {
+            const text = textInput2.value || 'ここに文字を入力してください';
+            previewText.textContent = text;
+
+            if (currentFont) {
+                previewText.style.fontFamily = currentFont;
+            }
+
+            previewText.style.fontSize = fontSize2.value + 'px';
+            previewText.style.lineHeight = lineHeight2.value;
+        }
+
+        // 初期化
+        loadInstalledFonts();
+        updateUploadPreview();
+    </script>
+</body>
+</html>
